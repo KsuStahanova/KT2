@@ -1,57 +1,83 @@
-echo "# KT2" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/KsuStahanova/KT2.git
-git push -u origin main
-
-
 import csv
 import json
 
-def distribute_books(users_file, books_file, result_file):
-    # Чтение данных из файла пользователей
-    with open(users_file, 'r') as users_csv:
-        user_reader = csv.reader(users_csv)
-        next(user_reader)  # Пропускаем заголовок
-        users = [row[0] for row in user_reader]  # Получаем список имен пользователей
-    
-    # Чтение данных из файла книг
-    with open(books_file, 'r') as books_csv:
-        book_reader = csv.reader(books_csv)
-        next(book_reader)  # Пропускаем заголовок
-        books = [row[0] for row in book_reader]  # Получаем список названий книг
+def load_data(books_file, users_file):
+books = []
+users = []
 
-    # Создание результирующей структуры
-    result = {
-        'users': []
-    }
-    num_books = len(books)
-    num_users = len(users)
-    books_per_user = num_books // num_users  # Количество книг на пользователя
-    remainder = num_books % num_users  # Остаток книг, добавляемый к последнему пользователю
-    
-    # Распределение книг максимально поровну
-    for i in range(num_users):
-        user = {
-            'name': users[i],
-            'books': []
+
+with open(books_file, newline='') as csvfile:
+    spamreader = csv.DictReader(csvfile)
+    for row in spamreader:
+        books.append(row)
+
+with open(users_file) as jsonfile:
+    f = json.load(jsonfile)
+    for row in f:
+        users.append(row)
+
+return users, books
+def GetBookData(books):
+result = []
+if isinstance(books, list):
+
+
+    for book in books:
+        ObjectBook = {
+            "title": book['Title'],
+            "author": book['Author'],
+            "pages": book['Pages'],
+            "genre": book['Genre']
         }
-        
-        # Добавление книг пользователю
-        num_books_for_user = books_per_user
-        if i == num_users - 1:
-            num_books_for_user += remainder  # Добавляем остаток к последнему пользователю
-        
-        user['books'] = books[:num_books_for_user]  # Добавляем нужное количество книг
-        books = books[num_books_for_user:]  # Обновляем список книг
+        result.append(ObjectBook)
+else:
+    ObjectBook = {
+        "title": books['Title'],
+        "author": books['Author'],
+        "pages": books['Pages'],
+        "genre": books['Genre']
+    }
 
-        result['users'].append(user)
+    result.append(ObjectBook)
+return result
+def GetUserData(user, books):
+result_book = GetBookData(books)
 
-    # Запись результата в файл
-    with open(result_file, 'w') as result_json:
-        json.dump(result, result_json)
-        
-# Вызов функции с передачей имен файлов
-distribute_books('users.csv', 'books.csv', 'result.json')
+
+result = {
+    "name": user['name'],
+    "gender": user['gender'],
+    "address": user['address'],
+    "age": user['age'],
+    "books": result_book
+}
+
+return result
+def GetResultData(users: list, books: list):
+
+
+count_users = len(users)
+count_books = len(books)
+
+books_per_user = count_books // count_users
+remainder = count_books % count_users
+
+users_with_books = []
+for i in range(count_users):
+
+    user = users[i]
+    user_books = books[i * books_per_user:(i + 1) * books_per_user]
+
+    if i < remainder:
+        extra_book = books[count_users * books_per_user + i]
+        user_books.append(extra_book)
+
+    user_data = GetUserData(user, user_books)
+    users_with_books.append(user_data)
+
+return users_with_books
+if name == "main":
+books_file = "books.csv"
+users_file = "users.json"
+users, books = load_data(books_file, users_file)
+result_data = GetResultData(users, books)
